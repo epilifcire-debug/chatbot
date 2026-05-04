@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FlowBot · Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Cabinet+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════════
+   RESET & TOKENS
+══════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:        #080b10;
+  --bg2:       #0d1117;
+  --bg3:       #111820;
+  --bg4:       #161e2a;
+  --bg5:       #1b2332;
+  --line:      rgba(255,255,255,.06);
+  --line2:     rgba(255,255,255,.10);
+  --line3:     rgba(255,255,255,.16);
+  --t1:        #eef1f6;
+  --t2:        #8b95a8;
+  --t3:        #4a5568;
+  --t4:        #2d3748;
+  --teal:      #00d4aa;
+  --teal2:     #00b894;
+  --teal-dim:  rgba(0,212,170,.12);
+  --teal-glow: rgba(0,212,170,.25);
+  --amber:     #ffb347;
+  --red:       #ff5c5c;
+  --blue:      #5b9cf6;
+  --green:     #4ade80;
+  --font:      'Cabinet Grotesk', sans-serif;
+  --mono:      'DM Mono', monospace;
+  --r:         10px;
+  --r2:        14px;
+  --sh:        0 4px 24px rgba(0,0,0,.5);
+}
+html, body { height: 100%; background: var(--bg); color: var(--t1); font-family: var(--font); font-size: 13px; overflow: hidden; }
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--line3); border-radius: 4px; }
+button { font-family: var(--font); cursor: pointer; }
+input  { font-family: var(--font); }
+
+/* ══════════════════════════════════════════════════════════
+   CONFIG OVERLAY (primeira vez / trocar URL)
+══════════════════════════════════════════════════════════ */
+.cfg-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+}
+.cfg-card {
+  width: 460px; padding: 48px 44px;
+  background: var(--bg2); border: 1px solid var(--line2);
+  border-radius: 20px; box-shadow: var(--sh);
+  display: flex; flex-direction: column; gap: 28px;
+}
+.cfg-logo {
+  display: flex; align-items: center; gap: 12px;
+}
+.cfg-logo-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: linear-gradient(135deg, #00d4aa 0%, #0099ff 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+}
+.cfg-logo-text h1 { font-size: 20px; font-weight: 800; letter-spacing: -.4px; }
+.cfg-logo-text p  { font-size: 11px; color: var(--t3); margin-top: 2px; font-family: var(--mono); }
+.cfg-body { display: flex; flex-direction: column; gap: 16px; }
+.cfg-label {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--t2); margin-bottom: 6px;
+}
+.cfg-input {
+  width: 100%; padding: 12px 14px;
+  background: var(--bg3); border: 1px solid var(--line2);
+  border-radius: var(--r); color: var(--t1); font-size: 13px;
+  outline: none; transition: border .15s;
+  font-family: var(--mono);
+}
+.cfg-input:focus { border-color: var(--teal); }
+.cfg-input::placeholder { color: var(--t4); }
+.cfg-hint { font-size: 11px; color: var(--t3); line-height: 1.6; margin-top: 4px; }
+.cfg-hint code { color: var(--teal); background: var(--teal-dim); padding: 1px 5px; border-radius: 4px; font-family: var(--mono); }
+.cfg-btn {
+  padding: 13px; border-radius: var(--r); border: none;
+  background: linear-gradient(135deg, var(--teal) 0%, #0099ff 100%);
+  color: #000; font-size: 14px; font-weight: 700;
+  letter-spacing: -.2px; transition: opacity .15s;
+}
+.cfg-btn:hover { opacity: .88; }
+.cfg-status { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.cfg-status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--t4); transition: all .3s; }
+.cfg-status-dot.testing { background: var(--amber); animation: pulse 1s infinite; }
+.cfg-status-dot.ok      { background: var(--teal); }
+.cfg-status-dot.fail    { background: var(--red); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+/* ══════════════════════════════════════════════════════════
+   LAYOUT PRINCIPAL
+══════════════════════════════════════════════════════════ */
+.app { display: flex; height: 100vh; }
+
+/* ── BARRA LATERAL ESQUERDA (nav) ── */
+.sidebar-nav {
+  width: 64px; flex-shrink: 0;
+  background: var(--bg2); border-right: 1px solid var(--line);
+  display: flex; flex-direction: column; align-items: center;
+  padding: 16px 0; gap: 4px;
+}
+.sn-logo {
+  width: 38px; height: 38px; border-radius: 11px; margin-bottom: 16px;
+  background: linear-gradient(135deg, var(--teal) 0%, #0099ff 100%);
+  display: flex; align-items: center; justify-content: center; font-size: 18px;
+  box-shadow: 0 0 20px var(--teal-glow);
+}
+.sn-btn {
+  width: 42px; height: 42px; border-radius: 11px;
+  background: none; border: none; color: var(--t3);
+  font-size: 17px; display: flex; align-items: center; justify-content: center;
+  transition: all .15s; position: relative;
+}
+.sn-btn:hover { background: var(--bg4); color: var(--t2); }
+.sn-btn.on    { background: var(--teal-dim); color: var(--teal); }
+.sn-btn.on::before {
+  content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 20px; background: var(--teal); border-radius: 0 3px 3px 0;
+}
+.sn-sep { width: 28px; height: 1px; background: var(--line); margin: 6px 0; }
+.sn-bot { margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.sn-status { width: 8px; height: 8px; border-radius: 50%; background: var(--red); transition: all .3s; }
+.sn-status.ok   { background: var(--teal); box-shadow: 0 0 8px var(--teal); animation: pulse 2s infinite; }
+.sn-status.wait { background: var(--amber); }
+.sn-cfg-btn {
+  width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--line2);
+  background: none; color: var(--t3); font-size: 13px;
+  display: flex; align-items: center; justify-content: center; transition: all .15s;
+}
+.sn-cfg-btn:hover { background: var(--bg4); color: var(--t2); }
+
+/* ── LISTA DE CONTATOS ── */
+.contacts-panel {
+  width: 300px; flex-shrink: 0;
+  background: var(--bg2); border-right: 1px solid var(--line);
+  display: flex; flex-direction: column;
+}
+.cp-header {
+  padding: 16px 14px 12px; border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.cp-title-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.cp-title { font-size: 15px; font-weight: 700; flex: 1; letter-spacing: -.3px; }
+.cp-count {
+  font-size: 10px; font-family: var(--mono); padding: 2px 8px;
+  border-radius: 20px; background: var(--bg4); color: var(--t3);
+  border: 1px solid var(--line);
+}
+.cp-refresh {
+  width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--line2);
+  background: none; color: var(--t3); font-size: 13px;
+  display: flex; align-items: center; justify-content: center; transition: all .15s;
+}
+.cp-refresh:hover { background: var(--bg4); color: var(--t2); }
+.cp-search {
+  position: relative;
+}
+.cp-search input {
+  width: 100%; padding: 8px 10px 8px 32px;
+  background: var(--bg3); border: 1px solid var(--line);
+  border-radius: 8px; color: var(--t1); font-size: 12px; outline: none;
+  transition: border .15s;
+}
+.cp-search input:focus { border-color: var(--teal); }
+.cp-search input::placeholder { color: var(--t4); }
+.cp-search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--t4); font-size: 12px; pointer-events: none; }
+
+/* Filtros */
+.cp-filters { display: flex; gap: 4px; padding: 10px 14px 0; border-bottom: 1px solid var(--line); }
+.cp-filter {
+  padding: 5px 10px; border-radius: 6px 6px 0 0; font-size: 11px; font-weight: 600;
+  background: none; border: none; color: var(--t3); transition: all .12s;
+  border-bottom: 2px solid transparent; letter-spacing: -.1px;
+}
+.cp-filter.on { color: var(--teal); border-bottom-color: var(--teal); }
+.cp-filter-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 15px; height: 15px; border-radius: 10px; padding: 0 3px;
+  font-size: 9px; font-family: var(--mono); margin-left: 3px;
+  background: var(--red); color: #fff;
+}
+.cp-filter-badge.z { background: var(--bg4); color: var(--t4); }
+
+/* Lista */
+.cp-list { flex: 1; overflow-y: auto; }
+.ci {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; cursor: pointer;
+  border-left: 3px solid transparent; transition: all .12s;
+  position: relative;
+}
+.ci:hover { background: var(--bg3); }
+.ci.active { background: var(--bg4); border-left-color: var(--teal); }
+.ci-av {
+  width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; overflow: hidden; position: relative;
+}
+.ci-av img { width: 100%; height: 100%; object-fit: cover; }
+.ci-av-dot {
+  position: absolute; bottom: 0; right: 0; width: 10px; height: 10px;
+  border-radius: 50%; background: var(--teal); border: 2px solid var(--bg2);
+}
+.ci-info { flex: 1; min-width: 0; }
+.ci-row1 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
+.ci-name { font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 155px; }
+.ci-time { font-size: 10px; color: var(--t3); font-family: var(--mono); }
+.ci-row2 { display: flex; align-items: center; gap: 5px; }
+.ci-msg  { font-size: 11.5px; color: var(--t2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+.ci-badge {
+  min-width: 18px; height: 18px; border-radius: 10px; padding: 0 5px;
+  background: var(--teal); color: #000; font-size: 9px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); flex-shrink: 0;
+}
+.ci-human-badge {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--amber);
+  flex-shrink: 0; box-shadow: 0 0 6px var(--amber);
+}
+.cp-empty { padding: 40px 16px; text-align: center; color: var(--t3); font-size: 12px; line-height: 1.8; }
+
+/* ── ÁREA PRINCIPAL ── */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* VIEWS */
+.view { display: none; flex: 1; overflow: hidden; flex-direction: column; }
+.view.on { display: flex; }
+
+/* ══ CHAT VIEW ══════════════════════════════════════════════ */
+.chat-empty {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 16px;
+  background: var(--bg);
+}
+.chat-empty-icon { font-size: 56px; opacity: .08; }
+.chat-empty-text { color: var(--t3); font-size: 13px; }
+.chat-empty-sub  { font-size: 11px; color: var(--t4); font-family: var(--mono); }
+
+/* Header do chat */
+.chat-header {
+  height: 56px; flex-shrink: 0;
+  background: var(--bg2); border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; gap: 12px; padding: 0 16px;
+}
+.ch-av {
+  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; overflow: hidden;
+}
+.ch-av img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.ch-info { flex: 1; }
+.ch-name { font-size: 14px; font-weight: 700; letter-spacing: -.2px; }
+.ch-sub  { font-size: 10.5px; color: var(--t3); font-family: var(--mono); margin-top: 1px; }
+.ch-actions { display: flex; gap: 4px; }
+.ch-btn {
+  width: 34px; height: 34px; border-radius: 9px; border: 1px solid var(--line2);
+  background: none; color: var(--t2); font-size: 14px;
+  display: flex; align-items: center; justify-content: center; transition: all .12s;
+}
+.ch-btn:hover { background: var(--bg4); color: var(--t1); }
+.ch-btn.danger { border-color: rgba(255,92,92,.3); color: var(--red); }
+.ch-btn.danger:hover { background: rgba(255,92,92,.1); }
+.ch-btn.human-on { border-color: rgba(255,179,71,.4); color: var(--amber); background: rgba(255,179,71,.08); }
+.ch-mode-tag {
+  font-size: 10px; font-family: var(--mono); padding: 3px 9px; border-radius: 20px;
+  background: rgba(255,179,71,.1); border: 1px solid rgba(255,179,71,.25); color: var(--amber);
+  font-weight: 600; letter-spacing: .04em;
+}
+
+/* Área de mensagens */
+.chat-msgs {
+  flex: 1; overflow-y: auto; padding: 20px 14%;
+  display: flex; flex-direction: column; gap: 2px;
+  background: var(--bg);
+  /* grade sutil */
+  background-image: radial-gradient(circle, rgba(255,255,255,.015) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+.msg-date {
+  text-align: center; margin: 12px 0;
+}
+.msg-date span {
+  font-size: 10.5px; font-family: var(--mono); color: var(--t3);
+  background: var(--bg2); padding: 3px 12px; border-radius: 20px;
+  border: 1px solid var(--line);
+}
+.msg { display: flex; max-width: 68%; margin-bottom: 1px; }
+.msg.out { align-self: flex-end; }
+.msg.in  { align-self: flex-start; }
+
+.bubble {
+  padding: 8px 12px 7px; border-radius: 12px; position: relative;
+  word-break: break-word; line-height: 1.55;
+  max-width: 100%;
+}
+.msg.out .bubble {
+  background: linear-gradient(135deg, #004d3a 0%, #003d2e 100%);
+  border: 1px solid rgba(0,212,170,.15);
+  border-bottom-right-radius: 3px;
+}
+.msg.in .bubble {
+  background: var(--bg3); border: 1px solid var(--line);
+  border-bottom-left-radius: 3px;
+}
+.b-txt  { font-size: 13.5px; padding-right: 52px; white-space: pre-wrap; color: var(--t1); }
+.b-meta { float: right; margin-top: -12px; margin-bottom: -2px; padding-left: 8px; display: flex; align-items: center; gap: 3px; }
+.b-time { font-size: 10px; color: var(--t3); font-family: var(--mono); }
+.b-check { font-size: 11px; color: var(--teal); }
+.msg.in .b-check { display: none; }
+
+/* Campo de digitação */
+.chat-footer {
+  flex-shrink: 0; background: var(--bg2); border-top: 1px solid var(--line);
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+}
+.chat-footer.human-mode { border-top-color: rgba(255,179,71,.3); }
+.cf-input-wrap {
+  flex: 1; background: var(--bg3); border: 1px solid var(--line2);
+  border-radius: 24px; display: flex; align-items: center; padding: 9px 16px; gap: 8px;
+  transition: border .15s;
+}
+.cf-input-wrap:focus-within { border-color: var(--teal); }
+.cf-input-wrap.human-mode:focus-within { border-color: var(--amber); }
+.cf-input {
+  flex: 1; background: none; border: none; outline: none;
+  color: var(--t1); font-size: 13px; font-family: var(--font);
+}
+.cf-input::placeholder { color: var(--t4); }
+.cf-send {
+  width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0; border: none;
+  background: linear-gradient(135deg, var(--teal) 0%, #0099ff 100%);
+  color: #fff; font-size: 16px; display: flex; align-items: center; justify-content: center;
+  transition: transform .12s, opacity .12s; box-shadow: 0 2px 12px var(--teal-glow);
+}
+.cf-send:hover { transform: scale(1.06); }
+.cf-send:active { transform: scale(.96); opacity: .8; }
+
+/* ══ QR VIEW ══════════════════════════════════════════════════ */
+.qr-view {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  background: var(--bg);
+}
+.qr-card {
+  width: 380px; background: var(--bg2); border: 1px solid var(--line2);
+  border-radius: 20px; padding: 36px; display: flex; flex-direction: column;
+  align-items: center; gap: 20px; box-shadow: var(--sh);
+}
+.qr-card h2 { font-size: 18px; font-weight: 800; letter-spacing: -.3px; }
+.qr-card p  { font-size: 12px; color: var(--t2); text-align: center; line-height: 1.7; }
+.qr-box {
+  width: 220px; height: 220px; border-radius: 14px; background: #fff;
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+  border: 2px solid var(--line2);
+}
+.qr-box img { width: 100%; height: 100%; }
+.qr-placeholder { color: #999; font-size: 11px; text-align: center; line-height: 1.7; }
+.qr-ok { display: flex; align-items: center; gap: 8px; background: rgba(74,222,128,.1); border: 1px solid rgba(74,222,128,.25); color: var(--green); padding: 12px 18px; border-radius: 10px; font-size: 12.5px; font-weight: 600; }
+.qr-tag { font-family: var(--mono); font-size: 11px; padding: 4px 12px; border-radius: 20px; background: rgba(255,179,71,.1); border: 1px solid rgba(255,179,71,.2); color: var(--amber); }
+.qr-steps { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+.qr-step { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--t2); }
+.qr-sn { width: 22px; height: 22px; border-radius: 7px; background: var(--teal-dim); color: var(--teal); font-size: 10px; display: flex; align-items: center; justify-content: center; font-family: var(--mono); flex-shrink: 0; border: 1px solid rgba(0,212,170,.2); font-weight: 700; }
+.qr-sep { width: 100%; height: 1px; background: var(--line); }
+/* Botão desconectar */
+.qr-disc-btn { width: 100%; padding: 10px; border-radius: 9px; border: 1px solid rgba(255,92,92,.3); background: none; color: var(--red); font-size: 12px; font-weight: 600; font-family: var(--font); transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.qr-disc-btn:hover { background: rgba(255,92,92,.08); border-color: rgba(255,92,92,.5); }
+.qr-confirm { width: 100%; background: rgba(255,92,92,.07); border: 1px solid rgba(255,92,92,.25); border-radius: 12px; padding: 16px; display: none; flex-direction: column; gap: 10px; }
+.qr-confirm.show { display: flex; }
+.qr-confirm-title { font-size: 13px; font-weight: 700; color: var(--red); text-align: center; }
+.qr-confirm-desc  { font-size: 11.5px; color: var(--t2); line-height: 1.6; text-align: center; }
+.qr-confirm-btns  { display: flex; gap: 8px; }
+.qr-yes { flex: 1; padding: 8px; border-radius: 8px; border: none; background: var(--red); color: #fff; font-size: 12px; font-weight: 700; font-family: var(--font); cursor: pointer; transition: opacity .12s; }
+.qr-yes:hover { opacity: .85; }
+.qr-no  { flex: 1; padding: 8px; border-radius: 8px; border: 1px solid var(--line2); background: none; color: var(--t2); font-size: 12px; font-weight: 600; font-family: var(--font); cursor: pointer; transition: all .12s; }
+.qr-no:hover { background: var(--bg4); }
+
+/* ══ STATS VIEW ══════════════════════════════════════════════ */
+.stats-view { flex: 1; overflow-y: auto; padding: 28px; background: var(--bg); display: flex; flex-direction: column; gap: 24px; }
+.sv-title { font-size: 18px; font-weight: 800; letter-spacing: -.4px; }
+.sv-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+.sv-card {
+  background: var(--bg2); border: 1px solid var(--line); border-radius: 14px;
+  padding: 20px; display: flex; flex-direction: column; gap: 8px;
+  transition: border .15s;
+}
+.sv-card:hover { border-color: var(--line2); }
+.sv-card-icon { font-size: 22px; margin-bottom: 4px; }
+.sv-card-val  { font-size: 28px; font-weight: 800; letter-spacing: -.5px; font-family: var(--mono); }
+.sv-card-label{ font-size: 11px; color: var(--t3); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+.sv-card.teal .sv-card-val { color: var(--teal); }
+.sv-card.amber .sv-card-val { color: var(--amber); }
+.sv-card.green .sv-card-val { color: var(--green); }
+.sv-card.red   .sv-card-val { color: var(--red); }
+
+/* ── BARRA DE STATUS ── */
+.statusbar {
+  height: 26px; background: var(--bg2); border-top: 1px solid var(--line);
+  display: flex; align-items: center; padding: 0 16px; gap: 16px; flex-shrink: 0;
+}
+.sb-item { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--t3); font-family: var(--mono); }
+.sb-item b { color: var(--t2); font-weight: 500; }
+.sb-sep { width: 1px; height: 12px; background: var(--line); }
+.sb-url { font-size: 9.5px; color: var(--t4); margin-left: auto; font-family: var(--mono); }
+.sb-url a { color: var(--teal); text-decoration: none; opacity: .6; }
+.sb-url a:hover { opacity: 1; }
+
+/* ── NOTIFICAÇÕES ── */
+.toast {
+  position: fixed; bottom: 20px; right: 20px; z-index: 500;
+  background: var(--bg3); border: 1px solid var(--line2); color: var(--t1);
+  font-size: 12.5px; font-weight: 500; padding: 10px 18px; border-radius: 10px;
+  box-shadow: var(--sh); transform: translateY(14px); opacity: 0;
+  transition: all .22s; pointer-events: none;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.success { border-color: rgba(0,212,170,.3); color: var(--teal); }
+.toast.error   { border-color: rgba(255,92,92,.3); color: var(--red); }
+
+/* ── PULSE DO HEADER QUANDO HUMANO ASSUME ── */
+@keyframes human-pulse { 0%,100%{border-color:rgba(255,179,71,.3)} 50%{border-color:rgba(255,179,71,.7)} }
+.chat-header.human-mode { animation: human-pulse 2s infinite; }
+
+/* ── CHIP "DIGITANDO..." ── */
+.typing-chip {
+  align-self: flex-start; display: flex; align-items: center; gap: 6px;
+  background: var(--bg3); border: 1px solid var(--line); border-radius: 12px;
+  padding: 7px 12px; font-size: 11.5px; color: var(--t2); margin-bottom: 4px;
+}
+.typing-dots { display: flex; gap: 3px; }
+.typing-dots span {
+  width: 5px; height: 5px; border-radius: 50%; background: var(--t3);
+  animation: tdot 1.2s infinite;
+}
+.typing-dots span:nth-child(2) { animation-delay: .2s; }
+.typing-dots span:nth-child(3) { animation-delay: .4s; }
+@keyframes tdot { 0%,80%,100%{opacity:.3;transform:scale(.8)} 40%{opacity:1;transform:scale(1)} }
+</style>
+</head>
+<body>
+
+<!-- ══ CONFIG OVERLAY ══════════════════════════════════════ -->
+<div class="cfg-overlay" id="cfg-overlay">
+  <div class="cfg-card">
+    <div class="cfg-logo">
+      <div class="cfg-logo-icon">🤖</div>
+      <div class="cfg-logo-text">
+        <h1>FlowBot Dashboard</h1>
+        <p>Painel de controle profissional</p>
+      </div>
+    </div>
+    <div class="cfg-body">
+      <div>
+        <div class="cfg-label">URL do servidor (Cloudflare Tunnel)</div>
+        <input class="cfg-input" id="cfg-url-input" type="text"
+          placeholder="https://abc123.trycloudflare.com"
+          value="">
+        <div class="cfg-hint">
+          Cole a URL gerada pelo <code>cloudflared tunnel --url http://localhost:3000</code><br>
+          Exemplo: <code>https://meu-bot.trycloudflare.com</code>
+        </div>
+      </div>
+      <div class="cfg-status">
+        <div class="cfg-status-dot" id="cfg-dot"></div>
+        <span id="cfg-status-text" style="color:var(--t3);font-size:12px">Aguardando URL...</span>
+      </div>
+      <button class="cfg-btn" onclick="conectar()">Conectar ao servidor →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ APP ═════════════════════════════════════════════════ -->
+<div class="app" id="app" style="display:none">
+
+  <!-- NAV lateral -->
+  <nav class="sidebar-nav">
+    <div class="sn-logo">🤖</div>
+    <button class="sn-btn on" id="nb-chat" onclick="setView('chat')" title="Conversas">💬</button>
+    <button class="sn-btn"    id="nb-stats" onclick="setView('stats')" title="Estatísticas">📊</button>
+    <button class="sn-btn"    id="nb-qr"   onclick="setView('qr')"   title="Conexão">📱</button>
+    <div class="sn-sep"></div>
+    <div class="sn-bot">
+      <div class="sn-status" id="sn-status" title="Status WhatsApp"></div>
+      <button class="sn-cfg-btn" onclick="showConfig()" title="Configurar URL">⚙</button>
+    </div>
+  </nav>
+
+  <!-- CONTATOS -->
+  <div class="contacts-panel">
+    <div class="cp-header">
+      <div class="cp-title-row">
+        <span class="cp-title">Conversas</span>
+        <span class="cp-count" id="cp-count">0</span>
+        <button class="cp-refresh" id="cp-refresh" onclick="fetchContacts()" title="Recarregar">↻</button>
+      </div>
+      <div class="cp-search">
+        <span class="cp-search-icon">🔍</span>
+        <input type="text" placeholder="Pesquisar..." oninput="onSearch(this.value)" id="search-in">
+      </div>
+    </div>
+    <div class="cp-filters">
+      <button class="cp-filter on" id="cf-todas"   onclick="setFilter('todas')">Todas <span class="cp-filter-badge z" id="fb-todas">0</span></button>
+      <button class="cp-filter"    id="cf-unread"  onclick="setFilter('unread')">Não lidas <span class="cp-filter-badge z" id="fb-unread">0</span></button>
+      <button class="cp-filter"    id="cf-humano"  onclick="setFilter('humano')">Humano <span class="cp-filter-badge z" id="fb-humano">0</span></button>
+    </div>
+    <div class="cp-list" id="contact-list">
+      <div class="cp-empty">Conectando ao servidor... ⏳</div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- CHAT VIEW -->
+    <div class="view on" id="view-chat">
+      <!-- Vazio -->
+      <div class="chat-empty" id="chat-empty">
+        <div class="chat-empty-icon">💬</div>
+        <div class="chat-empty-text">Selecione uma conversa</div>
+        <div class="chat-empty-sub">para começar o atendimento</div>
+      </div>
+      <!-- Chat aberto -->
+      <div id="chat-open" style="display:none;flex:1;flex-direction:column;overflow:hidden">
+        <div class="chat-header" id="chat-header">
+          <div class="ch-av" id="ch-av">?</div>
+          <div class="ch-info">
+            <div class="ch-name" id="ch-name">—</div>
+            <div class="ch-sub"  id="ch-sub">—</div>
+          </div>
+          <div class="ch-actions">
+            <span class="ch-mode-tag" id="ch-mode-tag" style="display:none">👤 HUMANO</span>
+            <button class="ch-btn" id="btn-assumir" onclick="assumir()" title="Assumir atendimento manual">👤</button>
+            <button class="ch-btn" id="btn-liberar" style="display:none" onclick="liberar()" title="Devolver ao bot">🤖</button>
+            <button class="ch-btn" onclick="resetSession()" title="Reiniciar sessão do bot">🔄</button>
+            <button class="ch-btn danger" onclick="confirmBloquear()" title="Bloquear contato">🚫</button>
+          </div>
+        </div>
+        <div class="chat-msgs" id="msgs"></div>
+        <div class="chat-footer" id="chat-footer">
+          <div class="cf-input-wrap" id="cf-wrap">
+            <input class="cf-input" id="msg-in" placeholder="Digite uma mensagem..."
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();enviar()}">
+          </div>
+          <button class="cf-send" onclick="enviar()">➤</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATS VIEW -->
+    <div class="view" id="view-stats">
+      <div class="stats-view">
+        <div class="sv-title">📊 Estatísticas</div>
+        <div class="sv-grid">
+          <div class="sv-card teal">
+            <div class="sv-card-icon">👥</div>
+            <div class="sv-card-val" id="st-total">0</div>
+            <div class="sv-card-label">Contatos</div>
+          </div>
+          <div class="sv-card amber">
+            <div class="sv-card-icon">💬</div>
+            <div class="sv-card-val" id="st-unread">0</div>
+            <div class="sv-card-label">Não lidas</div>
+          </div>
+          <div class="sv-card green">
+            <div class="sv-card-icon">🤖</div>
+            <div class="sv-card-val" id="st-status-val">—</div>
+            <div class="sv-card-label">Status WhatsApp</div>
+          </div>
+          <div class="sv-card red">
+            <div class="sv-card-icon">👤</div>
+            <div class="sv-card-val" id="st-humano">0</div>
+            <div class="sv-card-label">Em atendimento humano</div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--t3);font-family:var(--mono);margin-top:8px" id="st-server">Servidor: —</div>
+      </div>
+    </div>
+
+    <!-- QR VIEW -->
+    <div class="view" id="view-qr">
+      <div class="qr-view">
+        <div class="qr-card">
+          <h2>Conectar WhatsApp</h2>
+          <p>Escaneie o QR Code com seu celular para ativar o bot de autoatendimento</p>
+          <div class="qr-box" id="qr-box">
+            <div class="qr-placeholder">⏳ Aguardando QR Code...</div>
+          </div>
+          <div id="qr-ok" style="display:none" class="qr-ok">✅ WhatsApp conectado e ativo!</div>
+          <div class="qr-tag" id="qr-tag">desconectado</div>
+          <div class="qr-steps">
+            <div class="qr-step"><div class="qr-sn">1</div>Abra o WhatsApp no celular</div>
+            <div class="qr-step"><div class="qr-sn">2</div>Vá em Dispositivos conectados</div>
+            <div class="qr-step"><div class="qr-sn">3</div>Toque em "Conectar dispositivo"</div>
+            <div class="qr-step"><div class="qr-sn">4</div>Aponte para o QR Code</div>
+          </div>
+          <div class="qr-sep"></div>
+          <!-- Caixa de confirmação -->
+          <div class="qr-confirm" id="qr-confirm">
+            <div class="qr-confirm-title">⚠️ Desconectar WhatsApp?</div>
+            <div class="qr-confirm-desc">A sessão será encerrada e um novo QR Code será gerado para outro número.</div>
+            <div class="qr-confirm-btns">
+              <button class="qr-no"  onclick="hideConfirm()">Cancelar</button>
+              <button class="qr-yes" onclick="doLogout()">Sim, desconectar</button>
+            </div>
+          </div>
+          <button class="qr-disc-btn" id="qr-disc-btn" onclick="showConfirm()">
+            🔌 Desconectar / Trocar número
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATUS BAR -->
+    <div class="statusbar">
+      <div class="sb-item">Status: <b id="sb-status">—</b></div>
+      <div class="sb-sep"></div>
+      <div class="sb-item">Contatos: <b id="sb-contacts">0</b></div>
+      <div class="sb-sep"></div>
+      <div class="sb-item">Não lidas: <b id="sb-unread">0</b></div>
+      <div class="sb-url"><a id="sb-url-link" href="#" target="_blank">—</a></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ══ SOCKET.IO carregado dinamicamente ══════════════════ -->
+<script>
+'use strict';
+
+// ══════════════════════════════════════════════════════════
+// ESTADO GLOBAL
+// ══════════════════════════════════════════════════════════
+let SERVER_URL  = localStorage.getItem('flowbot_url') || '';
+let socket      = null;
+let allContacts = [];
+let currentNum  = null;
+let currentFilter = 'todas';
+let searchQ     = '';
+let humanModes  = {}; // { number: true/false }
+
+// ══════════════════════════════════════════════════════════
+// CONFIG / CONEXÃO
+// ══════════════════════════════════════════════════════════
+// Se já tem URL salva, tenta conectar direto
+window.addEventListener('load', () => {
+  if (SERVER_URL) {
+    document.getElementById('cfg-url-input').value = SERVER_URL;
+    conectar();
+  }
+});
+
+async function conectar() {
+  const url = document.getElementById('cfg-url-input').value.trim().replace(/\/$/, '');
+  if (!url) { toast('Cole a URL do servidor', 'error'); return; }
+
+  const dot  = document.getElementById('cfg-dot');
+  const txt  = document.getElementById('cfg-status-text');
+
+  dot.className = 'cfg-status-dot testing';
+  txt.textContent = 'Testando conexão...';
+  txt.style.color = 'var(--amber)';
+
+  try {
+    const r = await fetch(url + '/api/status', { signal: AbortSignal.timeout(6000) });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+
+    dot.className = 'cfg-status-dot ok';
+    txt.textContent = '✅ Conectado! Abrindo dashboard...';
+    txt.style.color = 'var(--teal)';
+
+    SERVER_URL = url;
+    localStorage.setItem('flowbot_url', url);
+
+    document.getElementById('sb-url-link').textContent = url.replace('https://','');
+    document.getElementById('sb-url-link').href = url;
+
+    setTimeout(() => {
+      document.getElementById('cfg-overlay').style.display = 'none';
+      document.getElementById('app').style.display = 'flex';
+      initSocket();
+    }, 800);
+
+  } catch (e) {
+    dot.className = 'cfg-status-dot fail';
+    txt.textContent = '❌ Falha: ' + (e.message || 'Não foi possível conectar');
+    txt.style.color = 'var(--red)';
+  }
+}
+
+function showConfig() {
+  document.getElementById('cfg-overlay').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  const dot = document.getElementById('cfg-dot');
+  dot.className = 'cfg-status-dot';
+  document.getElementById('cfg-status-text').textContent = 'Aguardando URL...';
+  document.getElementById('cfg-status-text').style.color = 'var(--t3)';
+}
+
+// ══════════════════════════════════════════════════════════
+// SOCKET.IO — carrega dinamicamente do servidor
+// ══════════════════════════════════════════════════════════
+function initSocket() {
+  // Injeta o script do socket.io do próprio servidor
+  const s = document.createElement('script');
+  s.src = SERVER_URL + '/socket.io/socket.io.js';
+  s.onload = () => {
+    socket = io(SERVER_URL, { transports: ['websocket', 'polling'] });
+    socket.on('connect',       () => { console.log('Socket conectado'); fetchContacts(); });
+    socket.on('disconnect',    () => toast('Desconectado do servidor', 'error'));
+    socket.on('status',        onStatus);
+    socket.on('qr',            onQR);
+    socket.on('contacts',      updateContacts);
+    socket.on('message',       onMsg);
+    socket.on('flow_status',   ({ enabled }) => {});
+    socket.on('atendente_request', ({ number, name }) => toast(`👤 ${name} pediu atendente!`, 'success'));
+    socket.on('atendente_status',  ({ number, humanMode }) => {
+      humanModes[number] = humanMode;
+      renderContacts();
+      if (number === currentNum) updateHumanUI(humanMode);
+    });
+    socket.on('history', ({ number, msgs }) => {
+      if (number === currentNum) renderHistory(msgs);
+    });
+  };
+  s.onerror = () => toast('Erro ao carregar socket.io do servidor', 'error');
+  document.head.appendChild(s);
+}
+
+// ══════════════════════════════════════════════════════════
+// STATUS & QR
+// ══════════════════════════════════════════════════════════
+const STATUS_MAP = {
+  conectado:    'conectado',
+  aguardando_qr:'aguardando QR',
+  autenticado:  'autenticando...',
+  desconectado: 'desconectado',
+  erro_auth:    'erro de auth',
+};
+
+function onStatus(s) {
+  const dot = document.getElementById('sn-status');
+  dot.className = 'sn-status' + (s === 'conectado' ? ' ok' : s === 'aguardando_qr' ? ' wait' : '');
+  const lbl = STATUS_MAP[s] || s;
+  document.getElementById('sb-status').textContent = lbl;
+  document.getElementById('qr-tag').textContent = lbl;
+  document.getElementById('st-status-val').textContent = lbl;
+  if (s === 'conectado') {
+    document.getElementById('qr-ok').style.display  = 'flex';
+    document.getElementById('qr-box').style.opacity = '.3';
+  }
+}
+
+function onQR(data) {
+  if (!data) return;
+  document.getElementById('qr-box').style.opacity = '1';
+  document.getElementById('qr-box').innerHTML = `<img src="${data}" alt="QR Code">`;
+  document.getElementById('qr-ok').style.display = 'none';
+}
+
+// ══════════════════════════════════════════════════════════
+// CONTATOS
+// ══════════════════════════════════════════════════════════
+const AV_BG = ['#0d3a2e','#0e1f4a','#3a0d2e','#2d2e0d','#1a0d3a','#3a1a0d'];
+const AV_TX = ['#00d4aa','#5b9cf6','#f472b6','#facc15','#a78bfa','#fb923c'];
+
+function initials(n) {
+  return (n || '?').replace(/[^\w\s]/g,'').trim().split(/\s+/).map(w => w[0]||'').join('').slice(0,2).toUpperCase() || '?';
+}
+function fmtTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso), now = new Date(), diff = now - d;
+  if (diff < 60000) return 'agora';
+  if (diff < 3600000) return Math.floor(diff / 60000) + 'm';
+  if (d.toDateString() === now.toDateString()) return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+}
+
+async function fetchContacts() {
+  try {
+    const r = await fetch(SERVER_URL + '/api/contacts');
+    const l = await r.json();
+    updateContacts(l);
+  } catch {}
+}
+
+function updateContacts(list) {
+  allContacts = list.sort((a, b) => (b.lastTime || '').localeCompare(a.lastTime || ''));
+  renderContacts();
+}
+
+function renderContacts() {
+  const q = searchQ.toLowerCase();
+  let list = allContacts.filter(c => {
+    if (q && !c.name?.toLowerCase().includes(q) && !c.number?.includes(q)) return false;
+    if (currentFilter === 'unread') return c.unread > 0;
+    if (currentFilter === 'humano') return humanModes[c.number];
+    return true;
+  });
+
+  const total  = allContacts.length;
+  const unread = allContacts.filter(c => c.unread > 0).length;
+  const humano = Object.values(humanModes).filter(Boolean).length;
+
+  document.getElementById('cp-count').textContent    = total;
+  document.getElementById('fb-todas').textContent    = total;
+  document.getElementById('fb-unread').textContent   = unread;
+  document.getElementById('fb-humano').textContent   = humano;
+  document.getElementById('fb-todas').className  = 'cp-filter-badge' + (total  ? '' : ' z');
+  document.getElementById('fb-unread').className = 'cp-filter-badge' + (unread ? '' : ' z');
+  document.getElementById('fb-humano').className = 'cp-filter-badge' + (humano ? '' : ' z');
+
+  document.getElementById('sb-contacts').textContent = total;
+  document.getElementById('sb-unread').textContent   = unread;
+  document.getElementById('st-total').textContent    = total;
+  document.getElementById('st-unread').textContent   = unread;
+  document.getElementById('st-humano').textContent   = humano;
+
+  const el = document.getElementById('contact-list');
+  if (!list.length) {
+    el.innerHTML = `<div class="cp-empty">${q ? 'Nenhum resultado' : 'Sem conversas ainda'}</div>`;
+    return;
+  }
+
+  el.innerHTML = list.map((c, i) => {
+    const isHuman = humanModes[c.number];
+    const avContent = c.photo
+      ? `<img src="${c.photo}" alt="">`
+      : `<span style="color:${AV_TX[i % AV_TX.length]}">${initials(c.name)}</span>`;
+
+    return `<div class="ci ${c.number === currentNum ? 'active' : ''}" onclick="openChat('${c.number}')">
+      <div class="ci-av" style="background:${AV_BG[i % AV_BG.length]}">${avContent}</div>
+      <div class="ci-info">
+        <div class="ci-row1">
+          <span class="ci-name">${c.name || c.number}</span>
+          <span class="ci-time">${fmtTime(c.lastTime)}</span>
+        </div>
+        <div class="ci-row2">
+          <span class="ci-msg">${c.lastMsg || 'Sem mensagens'}</span>
+          ${c.unread > 0 ? `<span class="ci-badge">${c.unread}</span>` : ''}
+          ${isHuman ? '<span class="ci-human-badge" title="Atendimento humano"></span>' : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setFilter(f) {
+  currentFilter = f;
+  ['todas','unread','humano'].forEach(id => {
+    document.getElementById('cf-' + id).className = 'cp-filter' + (id === f ? ' on' : '');
+  });
+  renderContacts();
+}
+function onSearch(v) { searchQ = v; renderContacts(); }
+setInterval(fetchContacts, 8000);
+
+// ══════════════════════════════════════════════════════════
+// CHAT
+// ══════════════════════════════════════════════════════════
+async function openChat(number) {
+  currentNum = number;
+  const c = allContacts.find(x => x.number === number);
+  if (c) c.unread = 0;
+  renderContacts();
+
+  // Mostrar chat
+  document.getElementById('chat-empty').style.display = 'none';
+  document.getElementById('chat-open').style.display  = 'flex';
+
+  // Avatar
+  const i   = allContacts.indexOf(c) || 0;
+  const avEl = document.getElementById('ch-av');
+  if (c?.photo) {
+    avEl.innerHTML = `<img src="${c.photo}" alt="">`;
+    avEl.style.background = 'transparent';
+  } else {
+    avEl.innerHTML = initials(c?.name || '?');
+    avEl.style.background = AV_BG[i % AV_BG.length];
+    avEl.style.color = AV_TX[i % AV_TX.length];
+  }
+
+  document.getElementById('ch-name').textContent = c?.name || number;
+  document.getElementById('ch-sub').textContent  = number;
+  document.getElementById('msgs').innerHTML = '<div class="msg-date"><span>⏳ Carregando...</span></div>';
+
+  updateHumanUI(humanModes[number] || false);
+
+  if (socket) socket.emit('get_messages', number);
+}
+
+function onMsg(msg) {
+  if (msg.number === currentNum) appendMsg(msg.from, msg.text, msg.time);
+  const c = allContacts.find(x => x.number === msg.number);
+  if (c) {
+    c.lastMsg  = msg.text;
+    c.lastTime = msg.time;
+    if (msg.from === 'user' && msg.number !== currentNum) c.unread = (c.unread || 0) + 1;
+  } else {
+    allContacts.unshift({ number: msg.number, name: msg.number, lastMsg: msg.text, lastTime: msg.time, unread: msg.from === 'user' ? 1 : 0, photo: null });
+  }
+  renderContacts();
+}
+
+function renderHistory(msgs) {
+  const el = document.getElementById('msgs');
+  el.innerHTML = '';
+  if (!msgs.length) { el.innerHTML = '<div class="msg-date"><span>Sem mensagens</span></div>'; return; }
+  let ld = '';
+  msgs.forEach(m => {
+    const d = m.time ? new Date(m.time).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }) : '';
+    if (d && d !== ld) { el.insertAdjacentHTML('beforeend', `<div class="msg-date"><span>${d}</span></div>`); ld = d; }
+    appendMsg(m.from, m.text, m.time, false);
+  });
+  el.scrollTop = el.scrollHeight;
+}
+
+function appendMsg(from, text, time, scroll = true) {
+  const el   = document.getElementById('msgs');
+  const t    = time ? new Date(time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+  const safe = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const d    = document.createElement('div');
+  d.className = `msg ${from === 'bot' ? 'out' : 'in'}`;
+  d.innerHTML = `<div class="bubble"><div class="b-txt">${safe}</div><div class="b-meta"><span class="b-time">${t}</span><span class="b-check">✓✓</span></div></div>`;
+  el.appendChild(d);
+  if (scroll) el.scrollTop = el.scrollHeight;
+}
+
+async function enviar() {
+  const inp  = document.getElementById('msg-in');
+  const text = inp.value.trim();
+  if (!text || !currentNum) return;
+  inp.value = '';
+  appendMsg('bot', text, new Date().toISOString());
+  try {
+    await fetch(SERVER_URL + '/api/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ number: currentNum, text }),
+    });
+  } catch { toast('Erro ao enviar mensagem', 'error'); }
+}
+
+async function resetSession() {
+  if (!currentNum) return;
+  try {
+    await fetch(SERVER_URL + `/api/reset-session/${currentNum}`, { method: 'POST' });
+    appendMsg('bot', '🔄 Sessão reiniciada.', new Date().toISOString());
+    toast('Sessão reiniciada', 'success');
+  } catch { toast('Erro ao reiniciar sessão', 'error'); }
+}
+
+function confirmBloquear() {
+  if (!currentNum) return;
+  if (confirm(`Bloquear ${allContacts.find(c => c.number === currentNum)?.name || currentNum}?`)) {
+    toast('Função não disponível nesta versão', 'error');
+  }
+}
+
+// ── Atendimento humano ────────────────────────────────────
+async function assumir() {
+  if (!currentNum) return;
+  try {
+    await fetch(SERVER_URL + `/api/atendente/assumir/${currentNum}`, { method: 'POST' });
+    humanModes[currentNum] = true;
+    updateHumanUI(true);
+    renderContacts();
+    toast('👤 Você assumiu o atendimento', 'success');
+  } catch { toast('Erro', 'error'); }
+}
+async function liberar() {
+  if (!currentNum) return;
+  try {
+    await fetch(SERVER_URL + `/api/atendente/liberar/${currentNum}`, { method: 'POST' });
+    humanModes[currentNum] = false;
+    updateHumanUI(false);
+    renderContacts();
+    toast('🤖 Bot retomou o atendimento', 'success');
+  } catch { toast('Erro', 'error'); }
+}
+function updateHumanUI(isHuman) {
+  const header  = document.getElementById('chat-header');
+  const footer  = document.getElementById('chat-footer');
+  const wrap    = document.getElementById('cf-wrap');
+  const inp     = document.getElementById('msg-in');
+  const tag     = document.getElementById('ch-mode-tag');
+  const btnA    = document.getElementById('btn-assumir');
+  const btnL    = document.getElementById('btn-liberar');
+
+  if (isHuman) {
+    header.classList.add('human-mode');
+    footer.classList.add('human-mode');
+    wrap.classList.add('human-mode');
+    inp.placeholder = '✏️ Modo humano — você está respondendo...';
+    tag.style.display = 'inline-flex';
+    btnA.style.display = 'none';
+    btnL.style.display = 'flex';
+    btnL.className = 'ch-btn human-on';
+  } else {
+    header.classList.remove('human-mode');
+    footer.classList.remove('human-mode');
+    wrap.classList.remove('human-mode');
+    inp.placeholder = 'Digite uma mensagem...';
+    tag.style.display = 'none';
+    btnA.style.display = 'flex';
+    btnL.style.display = 'none';
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// VIEWS
+// ══════════════════════════════════════════════════════════
+function setView(v) {
+  ['chat','stats','qr'].forEach(id => {
+    document.getElementById('view-' + id).className = 'view' + (id === v ? ' on' : '');
+    document.getElementById('nb-' + (id === 'stats' ? 'stats' : id)).className = 'sn-btn' + (id === v ? ' on' : '');
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+// LOGOUT
+// ══════════════════════════════════════════════════════════
+function showConfirm() {
+  document.getElementById('qr-confirm').classList.add('show');
+  document.getElementById('qr-disc-btn').style.display = 'none';
+}
+function hideConfirm() {
+  document.getElementById('qr-confirm').classList.remove('show');
+  document.getElementById('qr-disc-btn').style.display = 'flex';
+}
+async function doLogout() {
+  hideConfirm();
+  const box = document.getElementById('qr-box');
+  box.style.opacity = '1';
+  box.innerHTML = '<div class="qr-placeholder">⏳ Desconectando...<br>Aguarde o novo QR</div>';
+  document.getElementById('qr-ok').style.display = 'none';
+  try { await fetch(SERVER_URL + '/api/logout', { method: 'POST' }); } catch {}
+  toast('🔌 Desconectado! Aguardando novo QR...', 'success');
+}
+
+// ══════════════════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════════════════
+let toastTimer;
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
